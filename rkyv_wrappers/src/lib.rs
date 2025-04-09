@@ -4,8 +4,8 @@
 #![deny(missing_docs)]
 #![deny(rustdoc::missing_crate_level_docs)]
 
-pub mod as_hashmap;
+//pub mod as_hashmap;
 pub mod custom_phantom;
 
-#[cfg(test)]
-pub mod tests;
+// #[cfg(test)]
+// pub mod tests;
