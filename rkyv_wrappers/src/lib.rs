@@ -6,6 +6,7 @@
 
 //pub mod as_hashmap;
 pub mod custom_phantom;
+mod expanded;
 
 // #[cfg(test)]
 // pub mod tests;

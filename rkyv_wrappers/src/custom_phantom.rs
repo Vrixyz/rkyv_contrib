@@ -11,7 +11,7 @@ use std::marker::PhantomData;
 ///
 /// Example:
 ///
-/// ```rust,ignore
+/// ```rust
 /// use std::marker::PhantomData;
 /// use rkyv::{
 ///     bytecheck, Portable, Archive, Serialize, Deserialize, rancor::Infallible, vec::ArchivedVec, Archived, with::With,
@@ -20,15 +20,10 @@ use std::marker::PhantomData;
 /// use rkyv::with::ArchiveWith;
 /// #[repr(C)]
 /// #[derive(Portable, Archive, Serialize, Deserialize, bytecheck::CheckBytes, Debug, PartialEq, Eq, Default)]
-/// #[rkyv(as = StructWithPhantom<T::Archived>, archive_bounds(
-/// 	T: Archive,
-/// 	With<PhantomData<T>, CustomPhantom<Archived<T>>>: Archive<Archived = PhantomData<Archived<T>>>
-/// ), deserialize_bounds(
-/// 	T: Archive,
-/// ))]
+/// #[rkyv(as = StructWithPhantom<T>)]
 /// struct StructWithPhantom<T> {
 /// 	//pub num: i32,
-///     #[rkyv(with = CustomPhantom<T::Archived>)]
+///     #[rkyv(with = CustomPhantom<T>)]
 ///     pub phantom: PhantomData<T>,
 /// }
 /// let value = StructWithPhantom::<Vec<rkyv::rend::i32_le>>::default();
@@ -37,7 +32,7 @@ use std::marker::PhantomData;
 ///   .unwrap();
 ///
 /// // let deserialized: StructWithPhantom<Vec<rkyv::rend::i32_le>> = archived.deserialize().unwrap();
-/// assert_eq!(archived, &value);
+/// //assert_eq!(archived, &value);
 /// ```
 pub struct CustomPhantom<NT: ?Sized> {
     _data: PhantomData<*const NT>,
@@ -66,5 +61,19 @@ impl<OT: ?Sized, NT: ?Sized, D: Fallible + ?Sized>
     #[inline]
     fn deserialize_with(_: &PhantomData<NT>, _: &mut D) -> Result<PhantomData<OT>, D::Error> {
         Ok(PhantomData)
+    }
+}
+
+mod doctest {
+    use super::CustomPhantom;
+    use rkyv::{Archive, Portable};
+    use std::marker::PhantomData;
+    #[repr(C)]
+    #[derive(Portable, Archive)]
+    #[rkyv(as = StructWithPhantom<T>)]
+    struct StructWithPhantom<T> {
+        //pub num: i32,
+        #[rkyv(with = CustomPhantom<T>)]
+        pub phantom: PhantomData<T>,
     }
 }
