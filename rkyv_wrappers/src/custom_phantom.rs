@@ -11,33 +11,36 @@ use std::marker::PhantomData;
 ///
 /// Example:
 ///
-/// ```rust,ignore
+/// ```rust
 /// use std::marker::PhantomData;
 /// use rkyv::{
-///     bytecheck, Portable, Archive, Serialize, Deserialize, rancor::Infallible, vec::ArchivedVec, Archived, with::With,
+///     deserialize, bytecheck, Portable, Archive, Deserialize, Serialize, rancor::Infallible, vec::ArchivedVec, Archived, with::With,
+///     rancor::Error,
 /// };
 /// use rkyv_wrappers::custom_phantom::CustomPhantom;
 /// use rkyv::with::ArchiveWith;
 /// #[repr(C)]
-/// #[derive(Portable, Archive, Serialize, Deserialize, bytecheck::CheckBytes, Debug, PartialEq, Eq, Default)]
-/// #[rkyv(as = StructWithPhantom<T::Archived>, archive_bounds(
-/// 	T: Archive,
-/// 	With<PhantomData<T>, CustomPhantom<Archived<T>>>: Archive<Archived = PhantomData<Archived<T>>>
-/// ), deserialize_bounds(
-/// 	T: Archive,
-/// ))]
+/// #[derive(Archive, Serialize, Deserialize, bytecheck::CheckBytes, Debug, PartialEq, Eq, Default)]
+/// #[rkyv(compare(PartialEq), derive(Debug))]
+/// // This should not be necessary, but somehow rustc needs a push in the right direction.
+/// #[rkyv(archive_bounds(CustomPhantom<T>: ArchiveWith<PhantomData<T>, Archived = PhantomData<T>>))]
 /// struct StructWithPhantom<T> {
-/// 	//pub num: i32,
-///     #[rkyv(with = CustomPhantom<T::Archived>)]
+/// 	pub num: i32,
+///     #[rkyv(with = CustomPhantom<T>)]
 ///     pub phantom: PhantomData<T>,
 /// }
-/// let value = StructWithPhantom::<Vec<rkyv::rend::i32_le>>::default();
+/// let value = StructWithPhantom::<Vec<i32>>::default();
 /// let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&value).unwrap();
-/// let archived = rkyv::access::<StructWithPhantom<ArchivedVec<rkyv::rend::i32_le>>, rkyv::rancor::Error>(&bytes)
-///   .unwrap();
+/// let archived = rkyv::access::<ArchivedStructWithPhantom<Vec<i32>>, Error>(&bytes[..]).unwrap();
+///  assert_eq!(archived, &value);
 ///
-/// // let deserialized: StructWithPhantom<Vec<rkyv::rend::i32_le>> = archived.deserialize().unwrap();
-/// assert_eq!(archived, &value);
+/// let new_value = StructWithPhantom::<Vec<i32>> {
+///     num: 42,
+///     phantom: PhantomData,
+/// };
+///
+/// let deserialized = deserialize::<StructWithPhantom<Vec<i32>>, Error>(archived).unwrap();
+/// assert_eq!(&deserialized, &value);
 /// ```
 pub struct CustomPhantom<NT: ?Sized> {
     _data: PhantomData<*const NT>,
